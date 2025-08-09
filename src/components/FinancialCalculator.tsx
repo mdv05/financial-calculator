@@ -12,6 +12,7 @@ import {
   optimizeContributions, calculateSocialSecurity
 } from '../utils/calculations';
 import { exportToCSV, exportToPDF, generateShareableLink, parseShareableLink } from '../utils/exportUtils';
+import { exportToFormattedCSV } from '../utils/tableExport';
 
 const defaultInputs: CalculatorInputs = {
   currentAge: 30,
@@ -89,7 +90,7 @@ export const FinancialCalculator: React.FC = () => {
 
   const handleExportCSV = () => {
     if (results) {
-      exportToCSV(results, inputs);
+      exportToFormattedCSV(results);
     }
   };
 
@@ -536,6 +537,43 @@ export const FinancialCalculator: React.FC = () => {
                     <Bar dataKey="interestEarned" name="Interest Earned" fill={CHART_COLORS.purple} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                <h3 className="text-lg font-semibold mb-4">Detailed Projection Data</h3>
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Contrib.</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Employer Match</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Savings</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Interest Earned</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {results.yearlyData.filter((_, index) => index % 5 === 0 || index === results.yearlyData.length - 1).map((year, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{year.age}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{year.year}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(year.salary)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(year.monthlyContribution)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(year.employerMatch)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(year.totalSavings)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(year.interestEarned)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-100">
+                    <tr>
+                      <td colSpan={5} className="px-3 py-2 text-sm font-medium text-gray-900">Final Values</td>
+                      <td className="px-3 py-2 text-sm font-bold text-gray-900 text-right">{formatCurrency(results.retirementValue)}</td>
+                      <td className="px-3 py-2 text-sm font-bold text-gray-900 text-right">{formatCurrency(results.totalInterestEarned)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
           )}

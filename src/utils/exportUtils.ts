@@ -4,6 +4,17 @@ import { format } from 'date-fns';
 import type { ProjectionResults, CalculatorInputs } from './calculations';
 
 export function exportToCSV(data: ProjectionResults, _inputs: CalculatorInputs): void {
+  // Helper function to escape CSV values
+  const escapeCSV = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const stringValue = value.toString();
+    // If the value contains comma, newline, or quotes, wrap it in quotes
+    if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
   const headers = [
     'Age',
     'Year',
@@ -17,8 +28,8 @@ export function exportToCSV(data: ProjectionResults, _inputs: CalculatorInputs):
   ];
   
   const rows = data.yearlyData.map(year => [
-    year.age,
-    year.year,
+    year.age.toString(),
+    year.year.toString(),
     year.salary.toFixed(2),
     year.monthlyContribution.toFixed(2),
     year.employerMatch.toFixed(2),
@@ -28,22 +39,28 @@ export function exportToCSV(data: ProjectionResults, _inputs: CalculatorInputs):
     year.interestEarned.toFixed(2)
   ]);
   
+  // Create summary section with proper alignment
   const summaryRows = [
-    [],
-    ['Summary'],
-    ['Retirement Value', data.retirementValue.toFixed(2)],
-    ['Retirement Value (Inflation Adjusted)', data.retirementValueInflationAdjusted.toFixed(2)],
-    ['Monthly Retirement Income', data.monthlyRetirementIncome.toFixed(2)],
-    ['Total Contributions', data.totalContributions.toFixed(2)],
-    ['Total Interest Earned', data.totalInterestEarned.toFixed(2)],
-    ['Replacement Ratio', (data.replacementRatio * 100).toFixed(1) + '%']
+    ['', '', '', '', '', '', '', '', ''], // Empty row for separation
+    ['SUMMARY', '', '', '', '', '', '', '', ''], // Summary header
+    ['Metric', 'Value', '', '', '', '', '', '', ''], // Sub-headers
+    ['Retirement Value', data.retirementValue.toFixed(2), '', '', '', '', '', '', ''],
+    ['Retirement Value (Inflation Adjusted)', data.retirementValueInflationAdjusted.toFixed(2), '', '', '', '', '', '', ''],
+    ['Monthly Retirement Income', data.monthlyRetirementIncome.toFixed(2), '', '', '', '', '', '', ''],
+    ['Total Contributions', data.totalContributions.toFixed(2), '', '', '', '', '', '', ''],
+    ['Total Interest Earned', data.totalInterestEarned.toFixed(2), '', '', '', '', '', '', ''],
+    ['Replacement Ratio', (data.replacementRatio * 100).toFixed(1) + '%', '', '', '', '', '', '', ''],
+    ['', '', '', '', '', '', '', '', ''], // Empty row
+    ['Created by Mariana Duong-Vazquez', '', '', '', '', '', '', '', ''],
+    [`Generated on ${format(new Date(), 'MMMM dd, yyyy')}`, '', '', '', '', '', '', '', '']
   ];
   
+  // Build CSV content with proper escaping
   const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(',')),
-    ...summaryRows.map(row => row.join(','))
-  ].join('\\n');
+    headers.map(escapeCSV).join(','),
+    ...rows.map(row => row.map(escapeCSV).join(',')),
+    ...summaryRows.map(row => row.map(escapeCSV).join(','))
+  ].join('\n');
   
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
