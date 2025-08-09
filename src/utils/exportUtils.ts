@@ -1,0 +1,160 @@
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { format } from 'date-fns';
+import type { ProjectionResults, CalculatorInputs } from './calculations';
+
+export function exportToCSV(data: ProjectionResults, _inputs: CalculatorInputs): void {
+  const headers = [
+    'Age',
+    'Year',
+    'Salary',
+    'Monthly Contribution',
+    'Employer Match',
+    'Total Contribution',
+    'Total Savings',
+    'Inflation Adjusted Savings',
+    'Interest Earned'
+  ];
+  
+  const rows = data.yearlyData.map(year => [
+    year.age,
+    year.year,
+    year.salary.toFixed(2),
+    year.monthlyContribution.toFixed(2),
+    year.employerMatch.toFixed(2),
+    year.totalContribution.toFixed(2),
+    year.totalSavings.toFixed(2),
+    year.totalSavingsInflationAdjusted.toFixed(2),
+    year.interestEarned.toFixed(2)
+  ]);
+  
+  const summaryRows = [
+    [],
+    ['Summary'],
+    ['Retirement Value', data.retirementValue.toFixed(2)],
+    ['Retirement Value (Inflation Adjusted)', data.retirementValueInflationAdjusted.toFixed(2)],
+    ['Monthly Retirement Income', data.monthlyRetirementIncome.toFixed(2)],
+    ['Total Contributions', data.totalContributions.toFixed(2)],
+    ['Total Interest Earned', data.totalInterestEarned.toFixed(2)],
+    ['Replacement Ratio', (data.replacementRatio * 100).toFixed(1) + '%']
+  ];
+  
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(',')),
+    ...summaryRows.map(row => row.join(','))
+  ].join('\\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `retirement-projection-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  link.click();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exportToPDF(
+  chartElement: HTMLElement | null,
+  data: ProjectionResults,
+  inputs: CalculatorInputs
+): Promise<void> {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  
+  pdf.setFontSize(20);
+  pdf.text('Retirement Planning Report', pageWidth / 2, 20, { align: 'center' });
+  
+  pdf.setFontSize(12);
+  pdf.text(`Generated: ${format(new Date(), 'MMMM dd, yyyy')}`, pageWidth / 2, 30, { align: 'center' });
+  
+  let yPosition = 50;
+  
+  pdf.setFontSize(14);
+  pdf.text('Input Parameters', 20, yPosition);
+  yPosition += 10;
+  
+  pdf.setFontSize(10);
+  const inputDetails = [
+    `Current Age: ${inputs.currentAge}`,
+    `Retirement Age: ${inputs.retirementAge}`,
+    `Current Salary: $${inputs.currentSalary.toLocaleString()}`,
+    `Current Savings: $${inputs.currentSavings.toLocaleString()}`,
+    `Monthly Contribution: $${inputs.monthlyContribution.toLocaleString()}`,
+    `Expected Return: ${(inputs.expectedReturn * 100).toFixed(1)}%`,
+    `Inflation Rate: ${(inputs.inflationRate * 100).toFixed(1)}%`
+  ];
+  
+  inputDetails.forEach(detail => {
+    pdf.text(detail, 25, yPosition);
+    yPosition += 7;
+  });
+  
+  yPosition += 10;
+  pdf.setFontSize(14);
+  pdf.text('Projection Results', 20, yPosition);
+  yPosition += 10;
+  
+  pdf.setFontSize(10);
+  const results = [
+    `Retirement Value: $${data.retirementValue.toLocaleString()}`,
+    `Inflation Adjusted Value: $${data.retirementValueInflationAdjusted.toLocaleString()}`,
+    `Monthly Retirement Income: $${data.monthlyRetirementIncome.toLocaleString()}`,
+    `Total Contributions: $${data.totalContributions.toLocaleString()}`,
+    `Total Interest Earned: $${data.totalInterestEarned.toLocaleString()}`,
+    `Income Replacement Ratio: ${(data.replacementRatio * 100).toFixed(1)}%`
+  ];
+  
+  results.forEach(result => {
+    pdf.text(result, 25, yPosition);
+    yPosition += 7;
+  });
+  
+  if (chartElement) {
+    try {
+      const canvas = await html2canvas(chartElement, {
+        scale: 2,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = pageWidth - 40;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      if (yPosition + imgHeight > pdf.internal.pageSize.getHeight() - 20) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      pdf.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
+    } catch (error) {
+      console.error('Error capturing chart:', error);
+    }
+  }
+  
+  pdf.save(`retirement-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+}
+
+export function generateShareableLink(inputs: CalculatorInputs): string {
+  const params = new URLSearchParams();
+  
+  Object.entries(inputs).forEach(([key, value]) => {
+    params.append(key, value.toString());
+  });
+  
+  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+}
+
+export function parseShareableLink(queryString: string): Partial<CalculatorInputs> {
+  const params = new URLSearchParams(queryString);
+  const inputs: Partial<CalculatorInputs> = {};
+  
+  params.forEach((value, key) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      (inputs as any)[key] = numValue;
+    }
+  });
+  
+  return inputs;
+}
