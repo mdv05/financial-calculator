@@ -812,6 +812,15 @@ export const FinancialCalculator: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <footer className="mt-8 py-4 text-center text-sm text-gray-600">
+          <p>
+            Created by Mariana Duong-Vazquez
+          </p>
+          <p className="mt-1">
+            © {new Date().getFullYear()} All rights reserved
+          </p>
+        </footer>
       </div>
     </div>
   );
