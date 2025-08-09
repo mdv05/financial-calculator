@@ -11,7 +11,7 @@ import {
   calculateProjections, calculateScenarios, monteCarloSimulation,
   optimizeContributions, calculateSocialSecurity
 } from '../utils/calculations';
-import { exportToCSV, exportToPDF, generateShareableLink, parseShareableLink } from '../utils/exportUtils';
+import { exportToPDF, generateShareableLink, parseShareableLink } from '../utils/exportUtils';
 import { exportToFormattedCSV } from '../utils/tableExport';
 
 const defaultInputs: CalculatorInputs = {

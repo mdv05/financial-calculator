@@ -1,4 +1,4 @@
-import { ProjectionResults } from './calculations';
+import type { ProjectionResults } from './calculations';
 
 export interface TableData {
   headers: string[];
