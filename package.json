@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "deploy": "./deploy.sh",
+    "deploy:preview": "npm run build && gcloud app deploy --no-promote --version=preview",
+    "logs": "gcloud app logs tail -s default",
+    "browse": "gcloud app browse"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",
