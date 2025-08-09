@@ -102,6 +102,30 @@ src/
 └── App.tsx                         # Root component
 ```
 
+## Deployment
+
+### Quick Deploy to Google Cloud Platform
+
+This application is configured for automatic deployment to GCP App Engine via GitHub Actions.
+
+1. **Setup GitHub Repository**: See [GITHUB_SETUP.md](GITHUB_SETUP.md)
+2. **Configure GCP**: See [DEPLOYMENT.md](DEPLOYMENT.md)
+3. **Push to deploy**: Every push to `main` triggers automatic deployment
+
+### Manual Deployment
+```bash
+# Deploy to GCP (requires gcloud CLI)
+npm run deploy [project-id]
+
+# Or use the deploy script
+./deploy.sh [project-id]
+```
+
+### Live Demo
+Once deployed, the application will be available at:
+- Production: `https://[PROJECT_ID].appspot.com`
+- Pull Request Previews: `https://pr-[NUMBER]-dot-[PROJECT_ID].appspot.com`
+
 ## Contributing
 
 1. Fork the repository
@@ -109,6 +133,8 @@ src/
 3. Write tests for new calculations
 4. Ensure all tests pass
 5. Submit a pull request
+
+Pull requests automatically get preview deployments for testing.
 
 ## License
 
