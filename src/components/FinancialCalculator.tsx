@@ -12,7 +12,7 @@ import {
   optimizeContributions, calculateSocialSecurity
 } from '../utils/calculations';
 import { exportToPDF, generateShareableLink, parseShareableLink } from '../utils/exportUtils';
-import { exportToFormattedCSV } from '../utils/tableExport';
+import { exportToExcel } from '../utils/excelExport';
 
 const defaultInputs: CalculatorInputs = {
   currentAge: 30,
@@ -88,9 +88,9 @@ export const FinancialCalculator: React.FC = () => {
     setInputs(prev => ({ ...prev, [field]: numValue }));
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (results) {
-      exportToFormattedCSV(results);
+      exportToExcel(results, inputs);
     }
   };
 
@@ -825,27 +825,39 @@ export const FinancialCalculator: React.FC = () => {
         <div className="bg-white rounded-lg shadow-xl p-6">
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={handleExportCSV}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              onClick={handleExportExcel}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
             >
-              Export to CSV
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M15.8,20H14L12,13.2L10,20H8.2L6.6,15.6L8.1,12L6.8,8.4L8.6,4H10.4L12,10.8L13.6,4H15.4L13.1,12L15.8,20M13,9V3.5L18.5,9H13Z" />
+              </svg>
+              Export to Excel
             </button>
             <button
               onClick={handleExportPDF}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
             >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M10.92,12.31C10.68,11.54 10.15,9.08 11.55,9.04C12.95,9 12.03,12.16 12.03,12.16C12.42,11.5 13.05,11.34 13.5,11.34C14.22,11.34 14.97,11.74 14.97,12.76C14.97,13.78 13.74,14.29 13.05,14.29C12.36,14.29 11.97,14 11.72,13.63C11.5,13.97 11.03,14.58 10.32,14.58C9.61,14.58 9,14.05 9,13.27C9,12.5 9.61,12.15 10.24,12.15C10.87,12.15 10.92,12.31 10.92,12.31M12.5,13.88C12.97,13.88 13.34,13.64 13.34,13.08C13.34,12.5 13,12.39 12.66,12.39C12.32,12.39 11.97,12.69 11.82,13.08C11.87,13.5 12.03,13.88 12.5,13.88M10.71,13C10.55,12.61 10.39,12.61 10.24,12.61C10.08,12.61 9.89,12.75 9.89,13.03C9.89,13.31 10.08,13.5 10.29,13.5C10.5,13.5 10.66,13.41 10.71,13Z" />
+              </svg>
               Export to PDF
             </button>
             <button
               onClick={handleShare}
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
             >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.35C15.11,18.56 15.08,18.78 15.08,19C15.08,20.61 16.39,21.92 18,21.92C19.61,21.92 20.92,20.61 20.92,19A2.92,2.92 0 0,0 18,16.08Z" />
+              </svg>
               Share Link
             </button>
             <button
               onClick={() => setInputs(defaultInputs)}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
             >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12,4C14.74,4 17.31,5 19.31,6.69L17.89,8.11C16.27,6.5 14.19,5.58 12,5.58C9.81,5.58 7.73,6.5 6.11,8.11L4.69,6.69C6.69,5 9.26,4 12,4M12,8C13.66,8 15.22,8.56 16.44,9.56L15,11C14.22,10.22 13.16,9.78 12,9.78C10.84,9.78 9.78,10.22 9,11L7.56,9.56C8.78,8.56 10.34,8 12,8M12,12A2,2 0 0,1 14,14A2,2 0 0,1 12,16A2,2 0 0,1 10,14A2,2 0 0,1 12,12M7,18L12,13L17,18H13V22H11V18H7Z" />
+              </svg>
               Reset
             </button>
           </div>
