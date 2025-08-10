@@ -57,6 +57,21 @@ export const FinancialCalculator: React.FC = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
+  const handleCalculate = useCallback(() => {
+    try {
+      const projectionResults = calculateProjections(inputs);
+      setResults(projectionResults);
+      
+      const scenarioResults = calculateScenarios(inputs);
+      setScenarios(scenarioResults);
+      
+      const mcResults = monteCarloSimulation(inputs, 500);
+      setMonteCarloResults(mcResults);
+    } catch (error) {
+      console.error('Calculation error:', error);
+    }
+  }, [inputs]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.toString()) {
@@ -73,21 +88,6 @@ export const FinancialCalculator: React.FC = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [inputs, handleCalculate]);
-
-  const handleCalculate = useCallback(() => {
-    try {
-      const projectionResults = calculateProjections(inputs);
-      setResults(projectionResults);
-      
-      const scenarioResults = calculateScenarios(inputs);
-      setScenarios(scenarioResults);
-      
-      const mcResults = monteCarloSimulation(inputs, 500);
-      setMonteCarloResults(mcResults);
-    } catch (error) {
-      console.error('Calculation error:', error);
-    }
-  }, [inputs]);
 
   const handleInputChange = (field: keyof CalculatorInputs, value: string) => {
     const numValue = parseFloat(value) || 0;
