@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -46,7 +46,13 @@ export const FinancialCalculator: React.FC = () => {
   const [inputs, setInputs] = useState<CalculatorInputs>(defaultInputs);
   const [results, setResults] = useState<ProjectionResults | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioComparison | null>(null);
-  const [monteCarloResults, setMonteCarloResults] = useState<any>(null);
+  const [monteCarloResults, setMonteCarloResults] = useState<{
+    median: number;
+    percentile25: number;
+    percentile75: number;
+    percentile95: number;
+    successRate: number;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<'inputs' | 'results' | 'scenarios' | 'optimization'>('inputs');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -66,9 +72,9 @@ export const FinancialCalculator: React.FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [inputs]);
+  }, [inputs, handleCalculate]);
 
-  const handleCalculate = () => {
+  const handleCalculate = useCallback(() => {
     try {
       const projectionResults = calculateProjections(inputs);
       setResults(projectionResults);
@@ -81,7 +87,7 @@ export const FinancialCalculator: React.FC = () => {
     } catch (error) {
       console.error('Calculation error:', error);
     }
-  };
+  }, [inputs]);
 
   const handleInputChange = (field: keyof CalculatorInputs, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -141,7 +147,7 @@ export const FinancialCalculator: React.FC = () => {
 
   const scenarioChartData = useMemo(() => {
     if (!scenarios) return [];
-    const data: any[] = [];
+    const data: Array<{ age: number; conservative: number; moderate: number; aggressive: number }> = [];
     const years = scenarios.moderate.yearlyData.length;
     
     for (let i = 0; i < years; i += 5) {

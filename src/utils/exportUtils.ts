@@ -3,9 +3,9 @@ import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
 import type { ProjectionResults, CalculatorInputs } from './calculations';
 
-export function exportToCSV(data: ProjectionResults, _inputs: CalculatorInputs): void {
+export function exportToCSV(data: ProjectionResults): void {
   // Helper function to escape CSV values
-  const escapeCSV = (value: any): string => {
+  const escapeCSV = (value: string | number | null | undefined): string => {
     if (value === null || value === undefined) return '';
     const stringValue = value.toString();
     // If the value contains comma, newline, or quotes, wrap it in quotes
@@ -181,7 +181,7 @@ export function parseShareableLink(queryString: string): Partial<CalculatorInput
   params.forEach((value, key) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      (inputs as any)[key] = numValue;
+      (inputs as Record<string, number>)[key] = numValue;
     }
   });
   
