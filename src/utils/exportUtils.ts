@@ -79,13 +79,18 @@ export async function exportToPDF(
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   
-  pdf.setFontSize(20);
-  pdf.text('Retirement Planning Report', pageWidth / 2, 20, { align: 'center' });
+  pdf.setFontSize(24);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('FutureScope', pageWidth / 2, 18, { align: 'center' });
+  
+  pdf.setFontSize(18);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Financial Projection Report', pageWidth / 2, 28, { align: 'center' });
   
   pdf.setFontSize(12);
-  pdf.text(`Generated: ${format(new Date(), 'MMMM dd, yyyy')}`, pageWidth / 2, 30, { align: 'center' });
+  pdf.text(`Generated: ${format(new Date(), 'MMMM dd, yyyy')}`, pageWidth / 2, 38, { align: 'center' });
   
-  let yPosition = 50;
+  let yPosition = 55;
   
   pdf.setFontSize(14);
   pdf.text('Input Parameters', 20, yPosition);

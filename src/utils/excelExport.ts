@@ -53,7 +53,7 @@ export function exportToExcel(data: ProjectionResults, inputs: CalculatorInputs)
 
   // Create summary data
   const summaryData = [
-    ['Financial Projection Summary'],
+    ['FutureScope Financial Projection Summary'],
     [''],
     ['Created by', 'Mariana Duong-Vazquez'],
     ['Generated on', format(new Date(), 'MMMM dd, yyyy')],
@@ -157,7 +157,7 @@ export function exportToExcel(data: ProjectionResults, inputs: CalculatorInputs)
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `Financial-Projection-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+  link.download = `FutureScope-Financial-Projection-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -207,7 +207,7 @@ export function createDetailedExcelReport(data: ProjectionResults, inputs: Calcu
 
   // 2. Retirement Analysis Sheet
   const retirementAnalysis = [
-    ['Retirement Analysis Report'],
+    ['FutureScope Retirement Analysis Report'],
     [''],
     ['Key Metrics'],
     ['Years to Retirement', inputs.retirementAge - inputs.currentAge],
@@ -266,7 +266,7 @@ export function createDetailedExcelReport(data: ProjectionResults, inputs: Calcu
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `Financial-Analysis-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+  link.download = `FutureScope-Financial-Analysis-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
