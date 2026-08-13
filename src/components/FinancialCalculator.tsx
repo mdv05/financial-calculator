@@ -13,6 +13,8 @@ import {
 } from '../utils/calculations';
 import { exportToPDF, generateShareableLink, parseShareableLink } from '../utils/exportUtils';
 import { exportToExcel } from '../utils/excelExport';
+import type { AnnuityInputs } from '../utils/annuities';
+import { priceAnnuity, insurerEconomics, defaultAnnuityInputs } from '../utils/annuities';
 
 const defaultInputs: CalculatorInputs = {
   currentAge: 30,
@@ -53,8 +55,10 @@ export const FinancialCalculator: React.FC = () => {
     percentile95: number;
     successRate: number;
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<'inputs' | 'results' | 'scenarios' | 'optimization'>('inputs');
+  const [activeTab, setActiveTab] = useState<'inputs' | 'results' | 'scenarios' | 'optimization' | 'income'>('inputs');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [annuityInputs, setAnnuityInputs] = useState<AnnuityInputs>(defaultAnnuityInputs);
+  const [showAnnuityAdvanced, setShowAnnuityAdvanced] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const handleCalculate = useCallback(() => {
@@ -92,6 +96,11 @@ export const FinancialCalculator: React.FC = () => {
   const handleInputChange = (field: keyof CalculatorInputs, value: string) => {
     const numValue = parseFloat(value) || 0;
     setInputs(prev => ({ ...prev, [field]: numValue }));
+  };
+
+  const handleAnnuityChange = (field: keyof AnnuityInputs, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setAnnuityInputs(prev => ({ ...prev, [field]: numValue }));
   };
 
   const handleExportExcel = () => {
@@ -145,6 +154,20 @@ export const FinancialCalculator: React.FC = () => {
     return results.yearlyData.filter((_, index) => index % 5 === 0 || index === results.yearlyData.length - 1);
   }, [results]);
 
+  const annuityClient = useMemo(() => priceAnnuity(annuityInputs), [annuityInputs]);
+  const annuityInsurer = useMemo(
+    () => insurerEconomics(annuityInputs, annuityClient.annualIncome),
+    [annuityInputs, annuityClient.annualIncome]
+  );
+  const annuityChartData = useMemo(
+    () => annuityClient.cumulative.filter((_, i) => i % 2 === 0),
+    [annuityClient]
+  );
+  const signatureChartData = useMemo(
+    () => annuityInsurer.signature.filter((_, i) => i % 2 === 0),
+    [annuityInsurer]
+  );
+
   const scenarioChartData = useMemo(() => {
     if (!scenarios) return [];
     const data: Array<{ age: number; conservative: number; moderate: number; aggressive: number }> = [];
@@ -182,7 +205,7 @@ export const FinancialCalculator: React.FC = () => {
               </span>
             </h1>
             <p className="text-gray-600 mt-3 text-base max-w-2xl mx-auto">
-              Professional retirement planning with institutional-grade projections and analysis
+              Retirement projections, guaranteed-income planning, and actuarial product pricing in one place
             </p>
           </header>
         </div>
@@ -234,6 +257,17 @@ export const FinancialCalculator: React.FC = () => {
               style={activeTab === 'optimization' ? { backgroundColor: '#1E3A8A' } : {}}
             >
               Optimization
+            </button>
+            <button
+              onClick={() => setActiveTab('income')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors duration-200 ${
+                activeTab === 'income'
+                  ? 'bg-navy-900 text-white shadow-sm'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+              style={activeTab === 'income' ? { backgroundColor: '#1E3A8A' } : {}}
+            >
+              Guaranteed Income
             </button>
           </div>
 
@@ -835,6 +869,252 @@ export const FinancialCalculator: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'income' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p className="text-sm text-blue-900">
+                  Turn a lump sum into <strong>guaranteed lifetime income</strong> with a single-premium immediate annuity,
+                  then see the same product from the <strong>insurer's pricing side</strong> (VNB, margin, IRR) the way an
+                  actuary evaluates new business.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Premium / Lump Sum ($)</label>
+                  <input
+                    type="number"
+                    value={annuityInputs.premium}
+                    onChange={(e) => handleAnnuityChange('premium', e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Annuitant Age</label>
+                  <input
+                    type="number"
+                    value={annuityInputs.annuitantAge}
+                    onChange={(e) => handleAnnuityChange('annuitantAge', e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Pricing Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={annuityInputs.pricingRate * 100}
+                    onChange={(e) => handleAnnuityChange('pricingRate', (parseFloat(e.target.value) / 100).toString())}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Expense / Margin Load (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={annuityInputs.expenseLoad * 100}
+                    onChange={(e) => handleAnnuityChange('expenseLoad', (parseFloat(e.target.value) / 100).toString())}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  />
+                </div>
+              </div>
+
+              {results && (
+                <button
+                  onClick={() => setAnnuityInputs(prev => ({
+                    ...prev,
+                    premium: Math.round(results.retirementValue),
+                    annuitantAge: inputs.retirementAge,
+                  }))}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  Use my projected nest egg ({formatCurrency(results.retirementValue)}) at age {inputs.retirementAge} &rarr;
+                </button>
+              )}
+
+              <div className="border-t pt-4">
+                <button
+                  onClick={() => setShowAnnuityAdvanced(!showAnnuityAdvanced)}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {showAnnuityAdvanced ? 'Hide' : 'Show'} Actuarial Assumptions
+                </button>
+              </div>
+
+              {showAnnuityAdvanced && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Valuation Rate (%)</label>
+                    <input type="number" step="0.1" value={annuityInputs.valuationRate * 100}
+                      onChange={(e) => handleAnnuityChange('valuationRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Earned Rate (%)</label>
+                    <input type="number" step="0.1" value={annuityInputs.earnedRate * 100}
+                      onChange={(e) => handleAnnuityChange('earnedRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Acquisition Expense (%)</label>
+                    <input type="number" step="0.1" value={annuityInputs.acquisitionExpenseRate * 100}
+                      onChange={(e) => handleAnnuityChange('acquisitionExpenseRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Maintenance Expense (% of reserve)</label>
+                    <input type="number" step="0.01" value={annuityInputs.maintenanceExpenseRate * 100}
+                      onChange={(e) => handleAnnuityChange('maintenanceExpenseRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Hurdle / Risk Discount Rate (%)</label>
+                    <input type="number" step="0.1" value={annuityInputs.hurdleRate * 100}
+                      onChange={(e) => handleAnnuityChange('hurdleRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Required Capital (% of reserve)</label>
+                    <input type="number" step="0.1" value={annuityInputs.capitalRate * 100}
+                      onChange={(e) => handleAnnuityChange('capitalRate', (parseFloat(e.target.value) / 100).toString())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Mortality: Modal Age</label>
+                    <input type="number" value={annuityInputs.gompertzModal}
+                      onChange={(e) => handleAnnuityChange('gompertzModal', e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Mortality: Dispersion</label>
+                    <input type="number" value={annuityInputs.gompertzScale}
+                      onChange={(e) => handleAnnuityChange('gompertzScale', e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800" style={{ fontFamily: 'Playfair Display, serif' }}>Your Guaranteed Lifetime Income</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Monthly Income (for life)</div>
+                    <div className="text-2xl font-bold text-green-700" style={{ color: '#059669' }}>{formatCurrency(annuityClient.monthlyIncome)}</div>
+                    <div className="text-xs text-gray-500 mt-1">{formatCurrency(annuityClient.annualIncome)} per year</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Annual Payout Rate</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatPercent(annuityClient.payoutRate)}</div>
+                    <div className="text-xs text-gray-500 mt-1">income per $1 of premium</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Expected Total Payout</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatCurrency(annuityClient.expectedTotalPayout)}</div>
+                    <div className="text-xs text-gray-500 mt-1">over ~{annuityClient.expectedPaymentYears.toFixed(0)} expected years</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Breakeven Age</div>
+                    <div className="text-2xl font-bold text-gray-900">{annuityClient.breakevenAge.toFixed(0)}</div>
+                    <div className="text-xs text-gray-500 mt-1">live past this and you come out ahead</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Money's-Worth Ratio</div>
+                    <div className="text-2xl font-bold text-gray-900">{formatPercent(annuityClient.moneysWorthRatio)}</div>
+                    <div className="text-xs text-gray-500 mt-1">expected value returned per $1 premium</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Buyer's IRR</div>
+                    <div className="text-2xl font-bold text-gray-900">{Number.isFinite(annuityClient.buyerIRR) ? formatPercent(annuityClient.buyerIRR) : '—'}</div>
+                    <div className="text-xs text-gray-500 mt-1">your return if you reach life expectancy</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800" style={{ fontFamily: 'Playfair Display, serif' }}>Cumulative Income vs. Premium</h3>
+                <ResponsiveContainer width="100%" height={360}>
+                  <LineChart data={annuityChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="age" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={(label) => `Age ${label}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="cumulativeIncome" name="Cumulative Income Received" stroke={CHART_COLORS.secondary} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="premium" name="Premium Paid" stroke={CHART_COLORS.danger} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-gray-500 mt-2">Where the green line crosses the red line is your breakeven age (~{annuityClient.breakevenAge.toFixed(0)}).</p>
+              </div>
+
+              <div className="bg-slate-800 rounded-lg p-6 text-white" style={{ backgroundColor: '#1E293B' }}>
+                <h3 className="text-xl font-semibold mb-1">Actuarial Pricing Lens — the insurer's side</h3>
+                <p className="text-sm text-slate-300 mb-4">
+                  The same policy, evaluated the way a product-pricing actuary does: value of new business, margin, IRR, and the
+                  emerging profit signature.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div>
+                    <div className="text-sm text-slate-300">VNB</div>
+                    <div className="text-2xl font-bold">{formatCurrency(annuityInsurer.vnb)}</div>
+                    <div className="text-xs text-slate-400 mt-1">PV of future profits</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-300">VNB Margin</div>
+                    <div className="text-2xl font-bold">{formatPercent(annuityInsurer.vnbMargin)}</div>
+                    <div className="text-xs text-slate-400 mt-1">VNB &divide; premium</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-300">IRR</div>
+                    <div className="text-2xl font-bold">{annuityInsurer.irr === null ? 'self-funding' : formatPercent(annuityInsurer.irr)}</div>
+                    <div className="text-xs text-slate-400 mt-1">return on capital</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-300">Day-One Result</div>
+                    <div className="text-2xl font-bold">{formatCurrency(annuityInsurer.dayOneResult)}</div>
+                    <div className="text-xs text-slate-400 mt-1">issue gain / (strain)</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-300">Reserve at Issue</div>
+                    <div className="text-2xl font-bold">{formatCurrency(annuityInsurer.reserveAtIssue)}</div>
+                    <div className="text-xs text-slate-400 mt-1">statutory reserve set up</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Profit Signature (emerging profit by year)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={signatureChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="age" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={(label) => `Age ${label}`} />
+                    <Bar dataKey="expectedProfit" name="Expected Profit" fill={CHART_COLORS.primary} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Reserve Runoff</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={signatureChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="age" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={(label) => `Age ${label}`} />
+                    <Area type="monotone" dataKey="reserve" name="Reserve Held" stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple} fillOpacity={0.4} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 text-sm text-amber-900 rounded">
+                Illustrative model with simplified assumptions (Gompertz mortality, deterministic best-estimate profit test).
+                Built to demonstrate the concepts behind product pricing and value-of-new-business analysis, not for actual pricing.
               </div>
             </div>
           )}
