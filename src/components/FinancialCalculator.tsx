@@ -50,6 +50,7 @@ export const FinancialCalculator: React.FC = () => {
   const [scenarios, setScenarios] = useState<ScenarioComparison | null>(null);
   const [monteCarloResults, setMonteCarloResults] = useState<{
     median: number;
+    percentile5: number;
     percentile25: number;
     percentile75: number;
     percentile95: number;
@@ -735,7 +736,7 @@ export const FinancialCalculator: React.FC = () => {
                     <div className="text-center">
                       <div className="text-sm text-gray-600">5th Percentile</div>
                       <div className="text-lg font-semibold text-red-600">
-                        {formatCurrency(monteCarloResults.percentile25)}
+                        {formatCurrency(monteCarloResults.percentile5)}
                       </div>
                     </div>
                     <div className="text-center">
@@ -932,7 +933,7 @@ export const FinancialCalculator: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
                     <div className="text-sm font-medium text-gray-600 mb-1">Breakeven Age</div>
-                    <div className="text-2xl font-bold text-gray-900">{annuityClient.breakevenAge.toFixed(0)}</div>
+                    <div className="text-2xl font-bold text-gray-900">{Number.isFinite(annuityClient.breakevenAge) ? annuityClient.breakevenAge.toFixed(0) : '—'}</div>
                     <div className="text-xs text-gray-500 mt-1">live past this and you come out ahead</div>
                   </div>
                   <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
@@ -956,7 +957,7 @@ export const FinancialCalculator: React.FC = () => {
                     <Line type="monotone" dataKey="premium" name="Amount Paid In" stroke={CHART_COLORS.danger} strokeWidth={2} strokeDasharray="5 5" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
-                <p className="text-xs text-gray-500 mt-2">Where the green line crosses the red line is your breakeven age (~{annuityClient.breakevenAge.toFixed(0)}).</p>
+                <p className="text-xs text-gray-500 mt-2">Where the green line crosses the red line is your breakeven age{Number.isFinite(annuityClient.breakevenAge) ? ` (~${annuityClient.breakevenAge.toFixed(0)})` : ''}.</p>
               </div>
 
               <div className="bg-amber-50 border-l-4 border-amber-400 p-4 text-sm text-amber-900 rounded">

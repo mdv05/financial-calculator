@@ -222,6 +222,7 @@ describe('Financial Calculation Functions', () => {
       const result = monteCarloSimulation(testInputs, 100);
       
       expect(result.median).toBeGreaterThan(0);
+      expect(result.percentile5).toBeLessThanOrEqual(result.percentile25);
       expect(result.percentile25).toBeLessThan(result.median);
       expect(result.median).toBeLessThan(result.percentile75);
       expect(result.percentile75).toBeLessThan(result.percentile95);

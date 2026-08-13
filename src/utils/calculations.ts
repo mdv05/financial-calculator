@@ -299,6 +299,7 @@ export function monteCarloSimulation(
   iterations: number = 1000
 ): {
   median: number;
+  percentile5: number;
   percentile25: number;
   percentile75: number;
   percentile95: number;
@@ -306,30 +307,49 @@ export function monteCarloSimulation(
 } {
   const results: number[] = [];
   const targetAmount = inputs.desiredRetirementIncome * 12 * (inputs.lifeExpectancy - inputs.retirementAge);
-  
+  const yearsToRetirement = inputs.retirementAge - inputs.currentAge;
+  const volatility = 0.12; // annual standard deviation of returns
+
+  // Standard normal draw (Box-Muller).
+  const gaussian = (): number => {
+    let u = Math.random();
+    if (u < 1e-12) u = 1e-12;
+    const v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+
   for (let i = 0; i < iterations; i++) {
-    const volatility = 0.15;
-    const randomReturn = inputs.expectedReturn + (Math.random() - 0.5) * volatility;
-    
-    const simulationInputs = {
-      ...inputs,
-      expectedReturn: randomReturn
-    };
-    
-    const projection = calculateProjections(simulationInputs);
-    results.push(projection.retirementValue);
+    let balance = inputs.currentSavings;
+    for (let year = 1; year <= yearsToRetirement; year++) {
+      const salary = salaryProjection(inputs.currentSalary, inputs.salaryGrowthRate, year);
+      const monthlyContribution = inputs.monthlyContribution * Math.pow(1 + inputs.contributionIncreaseRate, year);
+      const monthlyMatch = calculateEmployerMatch(
+        salary / 12,
+        monthlyContribution,
+        inputs.employerMatchPercent,
+        inputs.employerMatchLimit
+      );
+      const annualContribution = (monthlyContribution + monthlyMatch) * 12;
+      // Draw a fresh return for each year from Normal(expectedReturn, volatility).
+      const annualReturn = inputs.expectedReturn + volatility * gaussian();
+      balance = balance * (1 + annualReturn) + annualContribution;
+      if (balance < 0) balance = 0;
+    }
+    results.push(balance);
   }
-  
+
   results.sort((a, b) => a - b);
-  
+  const at = (p: number) =>
+    results[Math.min(results.length - 1, Math.max(0, Math.floor(iterations * p)))];
   const successCount = results.filter(value => value >= targetAmount).length;
-  
+
   return {
-    median: results[Math.floor(iterations * 0.5)],
-    percentile25: results[Math.floor(iterations * 0.25)],
-    percentile75: results[Math.floor(iterations * 0.75)],
-    percentile95: results[Math.floor(iterations * 0.95)],
-    successRate: successCount / iterations
+    median: at(0.5),
+    percentile5: at(0.05),
+    percentile25: at(0.25),
+    percentile75: at(0.75),
+    percentile95: at(0.95),
+    successRate: successCount / iterations,
   };
 }
 
